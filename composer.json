@@ -1,0 +1,11 @@
+{
+    "name": "qafoogalaxy/foorge.elasticsearch",
+    "description": "Elasticsearch backed service for a Foorge cluster",
+    "license": "MIT",
+    "type": "ansible-role",
+    "require": {
+        "qafoogalaxy/installer": "@stable",
+        "qafoogalaxy/foorge.base": "@stable"
+    }
+}
+

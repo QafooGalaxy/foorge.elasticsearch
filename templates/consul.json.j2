@@ -1,0 +1,14 @@
+{
+    "services": [
+        {
+            "name": "elasticsearch",
+            "tags": {{ elasticsearch_apps|to_nice_json }},
+            "port": {{ elasticsearch_http_port }}
+        },
+        {
+            "name": "elasticsearchtcp",
+            "tags": {{ elasticsearch_apps|to_nice_json }},
+            "port": {{ elasticsearch_tcp_port }}
+        }
+    ]
+}

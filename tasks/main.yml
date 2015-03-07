@@ -1,0 +1,56 @@
+---
+- name: "require a password for authenticated elasticsearch"
+  fail: msg="You must set elasticsearch_http_basic_password to use authentication."
+  when: "{{ elasticsearch_http_basic_auth_enabled }} == 1 and elasticsearch_http_basic_password == ''"
+
+- name: "install elasticsearch repository key"
+  apt_key: url="http://packages.elasticsearch.org/GPG-KEY-elasticsearch" state="present"
+
+- name: "Add Elasticsearch repository"
+  apt_repository: repo="deb http://packages.elasticsearch.org/elasticsearch/1.2/debian stable main" state="present" update_cache="yes"
+
+- name: "install elasticsearch"
+  apt: name="elasticsearch" state="latest" install_recommends="yes"
+  notify: "Restart Elasticsearch"
+
+- name: "start elasticsearch"
+  service: name=elasticsearch state=started
+
+- name: "configure elasticsearch.yml"
+  lineinfile: >
+      dest=/etc/elasticsearch/elasticsearch.yml
+      regexp='^#?{{ item.option }}:'
+      line='{{ item.option }}: {{ item.value }}'
+  with_items: elasticsearch_config|union(elasticsearch_default_config)
+  notify: "Restart Elasticsearch"
+
+- name: "configure elasticsearch to be run upon boot"
+  sudo: yes
+  shell: >
+      update-rc.d elasticsearch defaults 95 10
+      creates=/etc/rc5.d/S95elasticsearch
+  notify: "Restart Elasticsearch"
+
+- name: "Create http-basic plugin folder"
+  file: path=/usr/share/elasticsearch/plugins/http-basic state=directory
+  when: "{{ elasticsearch_http_basic_auth_enabled }} == 1"
+
+- name: "install http-basic plugin"
+  get_url: >
+      url={{ elasticsearch_http_basic_url }}
+      dest=/usr/share/elasticsearch/plugins/http-basic/elasticsearch-http-basic.jar
+  when: "{{ elasticsearch_http_basic_auth_enabled }} == 1"
+  notify: "Restart Elasticsearch"
+
+- name: "register elasticsearch service with consul"
+  template: src=consul.json.j2 dest=/etc/consul.d/elasticsearch.json
+  register: elasticsearch_consul_changed
+
+- name: "register elasticsearch config in consul kv"
+  command: >
+      curl -XPUT -d"http://{{ elasticsearch_http_basic_user }}:{{ elasticsearch_http_basic_password }}@{{ item }}.elasticsearch.service.consul:{{ elasticsearch_http_port }}" http://localhost:8500/v1/kv/apps/{{ item }}/elasticsearch/connection/{{ item }}
+  with_items: elasticsearch_apps
+
+- name: "reload consul"
+  command: consul reload
+  when: elasticsearch_consul_changed|changed

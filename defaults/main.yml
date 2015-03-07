@@ -1,0 +1,18 @@
+---
+elasticsearch_cluster_name: 'elasticsearch'
+elasticsearch_http_basic_auth_enabled: 1
+elasticsearch_http_basic_url: 'https://github.com/Asquera/elasticsearch-http-basic/releases/download/v1.4.0/elasticsearch-http-basic-1.4.0.jar'
+elasticsearch_http_basic_user: 'admin'
+elasticsearch_http_basic_password: ""
+elasticsearch_http_port: 9200
+elasticsearch_tcp_port: '{{ elasticsearch_http_port + 100 }}'
+elasticsearch_config: []
+elasticsearch_apps: []
+elasticsearch_default_config:
+    - { option: 'cluster.name', value: '{{ elasticsearch_cluster_name }}' }
+    - { option: 'http.port', value: '{{ elasticsearch_http_port }}' }
+    - { option: 'network.host', value: "{{ ansible_all_ipv4_addresses|ipaddr('private')|first|default('127.0.0.1') }}" }
+    - { option: 'transport.tcp.port', value: '{{ elasticsearch_tcp_port }}' }
+    - { option: 'http.basic.enabled', value: '{{ elasticsearch_http_basic_auth_enabled }}' }
+    - { option: 'http.basic.user', value: '{{ elasticsearch_http_basic_user }}' }
+    - { option: 'http.basic.password', value: '{{ elasticsearch_http_basic_password }}' }
